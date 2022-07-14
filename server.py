@@ -1,5 +1,17 @@
+import imp
+import queue
 import socket
 import sys
+import threading
+import time
+from queue import Queue
+
+
+NUMBER_OF_THREADS = 2
+JOB_NUMBER = [1, 2]
+queue = Queue()
+connections = []
+addresses = []
 
 
 # Creating a socket for connecting two computers.
@@ -32,44 +44,25 @@ def bind_socket():
         bind_socket()
 
 
-# Establishing connection with a client.
-def socket_accept():
-    conn, address = s.accept()
-    print(
-        "Connection has been established! {}:{}".format(
-            str(address[0]), str(address[1])
-        )
-    )
-    send_commands(conn)
-    conn.close()
+# Handling and saving multiple connections.
+# Closing previous connections when server.py file is restarted.
+def accept_connection():
 
+    for c in connections:
+        c.close()
 
-# Send commands to client.
-def send_commands(conn):
-    init = True
+    del connections[:]
+    del addresses[:]
+
     while True:
-        if init:
-            initial_response = str(conn.recv(1024), "utf-8")
-            print(initial_response, end="")
-            init = False
+        try:
+            conn, address = s.accept()
+            s.setblocking(1)  # Prevents timeout
 
-        cmd = input()
+            connections.append(conn)
+            addresses.append(address)
 
-        if cmd == "quit":
-            conn.close()
-            s.close()
-            sys.exit()
+            print("Connection has been established: ".format(address[0]))
 
-        if len(str.encode(cmd)) > 0:
-            conn.send(str.encode(cmd))
-            client_response = str(conn.recv(1024), "utf-8")
-            print(client_response, end="")
-
-
-def main():
-    create_socket()
-    bind_socket()
-    socket_accept()
-
-
-main()
+        except:
+            print("Error connection could not established.")
