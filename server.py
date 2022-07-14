@@ -62,7 +62,7 @@ def accept_connection():
             connections.append(conn)
             addresses.append(address)
 
-            print("Connection has been established: ".format(address[0]))
+            print("Connection has been established: {}".format(address[0]))
 
         except:
             print("Error connection could not established.")
