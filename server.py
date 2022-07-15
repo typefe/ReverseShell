@@ -1,13 +1,12 @@
 import socket
-import sys
 import threading
-import time
 from queue import Queue
 
 
 NUMBER_OF_THREADS = 2
 JOB_NUMBER = [0, 1]
 queue = Queue()
+event = threading.Event()
 connections = []
 addresses = []
 
@@ -60,7 +59,7 @@ def accept_connection():
             connections.append(conn)
             addresses.append(address)
 
-            print("Connection has been established: {}".format(address[0]))
+            print(f"\nConnection has been established> {address[0]}\n> ", end="")
 
         except:
             print("Error connection could not established.")
@@ -70,7 +69,7 @@ def accept_connection():
 # Interactive prompt for sending commands.
 def start_cmp():
     while True:
-        cmd = input("CMP: ")
+        cmd = input("CMP> ")
 
         if cmd == "help":
             cmp_help()
@@ -172,9 +171,12 @@ def work():
         if x == 0:
             create_socket()
             bind_socket()
+            event.set()
             accept_connection()
 
-        if x == 1:
+        event.wait(timeout=5)  # Wait for second thread to complete binding.
+
+        if x == 1 and event.is_set():
             start_cmp()
 
         queue.task_done()
